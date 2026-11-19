@@ -32,6 +32,38 @@ END;
 
 **Expected Output:**
 - A new entry is added to the `employee_log` table each time a new record is inserted into the `employees` table.
+  ## Query ##
+```
+  
+SET SERVEROUTPUT ON;
+
+CREATE TABLE employees (
+    emp_id NUMBER,
+    emp_name VARCHAR2(50),
+    salary NUMBER
+);
+
+CREATE TABLE employee_log (
+    emp_id NUMBER,
+    emp_name VARCHAR2(50),
+    salary NUMBER
+);
+
+CREATE OR REPLACE TRIGGER log_employee
+AFTER INSERT ON employees
+FOR EACH ROW
+BEGIN
+    INSERT INTO employee_log
+    VALUES (:NEW.emp_id, :NEW.emp_name, :NEW.salary);
+END;
+/
+
+INSERT INTO employees VALUES (1, 'Pharsheen', 5000);
+
+SELECT * FROM employee_log;
+```
+
+<img width="940" height="440" alt="image" src="https://github.com/user-attachments/assets/955896b3-d2da-40ed-ad4a-31ba704c7523" />
 
 ---
 
@@ -42,6 +74,31 @@ END;
 
 **Expected Output:**
 - If an attempt is made to delete a record from `sensitive_data`, an error message is raised, e.g., `ERROR: Deletion not allowed on this table.`
+## Query ##
+```
+
+CREATE TABLE sensitive_data (
+    id NUMBER,
+    data VARCHAR2(50)
+);
+
+CREATE OR REPLACE TRIGGER prevent_delete
+BEFORE DELETE ON sensitive_data
+FOR EACH ROW
+BEGIN
+    RAISE_APPLICATION_ERROR(
+        -20001,
+        'Deletion not allowed on this table.'
+    );
+END;
+/
+
+INSERT INTO sensitive_data VALUES (1, 'Confidential');
+
+DELETE FROM sensitive_data WHERE id = 1;
+
+```
+<img width="942" height="478" alt="image" src="https://github.com/user-attachments/assets/f209d9b1-df17-40e6-8ff1-164755def36a" />
 
 ---
 
@@ -52,6 +109,37 @@ END;
 
 **Expected Output:**
 - The `last_modified` column in the `products` table is updated automatically to the current date and time when any record is updated.
+## Query ##
+```
+
+CREATE TABLE products (
+    product_id NUMBER,
+    product_name VARCHAR2(50),
+    price NUMBER
+);
+
+ALTER TABLE products
+ADD last_modified TIMESTAMP;
+
+CREATE OR REPLACE TRIGGER update_timestamp
+BEFORE UPDATE ON products
+FOR EACH ROW
+BEGIN
+    :NEW.last_modified := CURRENT_TIMESTAMP;
+END;
+/
+
+INSERT INTO products (product_id, product_name, price)
+VALUES (1, 'Laptop', 50000);
+
+UPDATE products
+SET price = 55000
+WHERE product_id = 1;
+
+SELECT * FROM products;
+
+```
+<img width="918" height="398" alt="image" src="https://github.com/user-attachments/assets/22cc54a8-e53d-4687-aa99-df169f14ae35" />
 
 ---
 
@@ -62,6 +150,39 @@ END;
 
 **Expected Output:**
 - The `audit_log` table will maintain a count of how many updates have been made to the `customer_orders` table.
+## Query ##
+```
+
+CREATE TABLE customer_orders (
+    order_id NUMBER,
+    amount NUMBER
+);
+
+CREATE TABLE audit_log (
+    update_count NUMBER
+);
+
+INSERT INTO audit_log VALUES (0);
+
+CREATE OR REPLACE TRIGGER count_updates
+AFTER UPDATE ON customer_orders
+FOR EACH ROW
+BEGIN
+    UPDATE audit_log
+    SET update_count = update_count + 1;
+END;
+/
+
+INSERT INTO customer_orders VALUES (1, 5000);
+
+UPDATE customer_orders
+SET amount = 6000
+WHERE order_id = 1;
+
+SELECT * FROM audit_log;
+
+```
+<img width="840" height="352" alt="image" src="https://github.com/user-attachments/assets/04d65f36-acf7-403d-9208-f823ec601068" />
 
 ---
 
@@ -72,6 +193,27 @@ END;
 
 **Expected Output:**
 - If the inserted salary in the `employees` table is below the condition (e.g., salary < 3000), the insert operation is blocked, and an error message is raised, such as: `ERROR: Salary below minimum threshold.`
+## Query ##
+```
+
+CREATE OR REPLACE TRIGGER check_salary
+BEFORE INSERT ON employees
+FOR EACH ROW
+BEGIN
+    IF :NEW.salary <= 3000 THEN
+        RAISE_APPLICATION_ERROR(
+            -20002,
+            'Salary below minimum threshold.'
+        );
+    END IF;
+END;
+/
+
+INSERT INTO employees
+VALUES (2, 'David', 2000);
+
+```
+<img width="962" height="468" alt="image" src="https://github.com/user-attachments/assets/7934f32f-3156-4ea8-8534-aca9c0a0e7f5" />
 
 ## RESULT
 Thus, the PL/SQL trigger programs were written and executed successfully.
